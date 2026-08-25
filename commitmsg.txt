@@ -1,0 +1,5 @@
+Fix: remove duplicate JSX/export in src/App.jsx to fix build
+
+Removed leftover multi-screen JSX and an extra export default which caused a production build error. Verified 'vite build' completes successfully after the fix.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
