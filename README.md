@@ -1,10 +1,25 @@
-# Ava Chen AI Video Portfolio
+﻿# RizzScouting
 
-A zero-build static portfolio website for an AI video director. Open `index.html` directly in a browser.
+RizzScouting is a fast, installable email outreach PWA for managing contacts, extracting new prospects, and tracking outbound performance.
 
-## Personalize
+## Features
+- Fast dashboard with stats and outreach analytics
+- Contact CRM-lite with search, status filtering, and bulk actions
+- Smart extraction of emails and basic prospect metadata from pasted text or uploaded CSV data
+- Campaign queue with send limits and queue tracking
+- Template library using merge fields
+- Theme toggle with persistence and local storage
+- IndexedDB persistence and installable service worker manifest
 
-- Replace the placeholder social URLs in the footer of `index.html`.
-- Replace the Stripe placeholder in the `Book a paid session` link with your Stripe Payment Link.
-- Update the email address and project text to your own details.
-- The contact form opens a pre-filled email in the visitor's default email client.
+## Local development
+
+```bash
+npm install
+npm run dev -- --host 0.0.0.0
+```
+
+## Production build
+
+```bash
+npm run build
+```
