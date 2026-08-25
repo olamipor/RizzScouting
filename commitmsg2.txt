@@ -1,0 +1,5 @@
+Feat: lazy-load XLSX and pdfjs; set pdfjs workerSrc for better Android runtime
+
+Dynamically import heavy parsers during file processing to reduce initial bundle size. Configure pdfjs worker via import.meta URL so the worker is available at runtime. Verified production build.
+
+Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>

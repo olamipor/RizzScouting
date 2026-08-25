@@ -1,6 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import * as XLSX from 'xlsx';
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
 
 // Minimal single-screen bulk email collector
 // - Paste or upload files (csv, txt, xlsx, pdf)
@@ -16,18 +14,32 @@ function extractEmailsFromText(text) {
 }
 
 async function extractTextFromPDF(file) {
-  // pdfjs-dist: read as array buffer and extract text content from all pages
-  const data = await file.arrayBuffer();
-  const loadingTask = pdfjsLib.getDocument({ data });
-  const doc = await loadingTask.promise;
-  let fullText = '';
-  for (let i = 1; i <= doc.numPages; i++) {
-    const page = await doc.getPage(i);
-    const content = await page.getTextContent();
-    const strings = content.items.map((s) => s.str);
-    fullText += strings.join(' ') + '\n';
+  // dynamic import of pdfjs to avoid bundling it in the initial chunk
+  try {
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf');
+    // Configure worker to use the packaged worker file so browsers can spawn it.
+    // Using new URL(...) ensures Vite knows about the asset and can serve it.
+    try {
+      pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/legacy/build/pdf.worker.min.js', import.meta.url).toString();
+    } catch (e) {
+      console.warn('Could not set pdfjs workerSrc', e);
+    }
+
+    const data = await file.arrayBuffer();
+    const loadingTask = pdfjs.getDocument({ data });
+    const doc = await loadingTask.promise;
+    let fullText = '';
+    for (let i = 1; i <= doc.numPages; i++) {
+      const page = await doc.getPage(i);
+      const content = await page.getTextContent();
+      const strings = content.items.map((s) => s.str);
+      fullText += strings.join(' ') + '\n';
+    }
+    return fullText;
+  } catch (err) {
+    console.warn('PDF parsing or dynamic import failed', err);
+    return '';
   }
-  return fullText;
 }
 
 export default function App() {
@@ -124,12 +136,17 @@ export default function App() {
           extractEmailsFromText(text).forEach((e) => foundSet.add(e));
         } else if (name.endsWith('.xlsx') || name.endsWith('.xls') || name.endsWith('.xlsm')) {
           const data = await file.arrayBuffer();
-          const workbook = XLSX.read(data, { type: 'array' });
-          workbook.SheetNames.forEach((sheetName) => {
-            const sheet = workbook.Sheets[sheetName];
-            const txt = XLSX.utils.sheet_to_csv(sheet);
-            extractEmailsFromText(txt).forEach((e) => foundSet.add(e));
-          });
+          try {
+            const XLSX = await import('xlsx');
+            const workbook = XLSX.read(data, { type: 'array' });
+            workbook.SheetNames.forEach((sheetName) => {
+              const sheet = workbook.Sheets[sheetName];
+              const txt = XLSX.utils.sheet_to_csv(sheet);
+              extractEmailsFromText(txt).forEach((e) => foundSet.add(e));
+            });
+          } catch (err) {
+            console.warn('XLSX parse failed', err);
+          }
         } else if (name.endsWith('.pdf')) {
           try {
             const txt = await extractTextFromPDF(file);
